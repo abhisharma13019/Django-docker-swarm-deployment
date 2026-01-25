@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  mera-web:
+    image: abhisharma16161/django-todo-app:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - app_data:/app
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: any
+
+volumes:
+  app_data:
+
