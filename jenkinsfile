@@ -1,0 +1,57 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = "django-app"
+        CONTAINER_NAME = "django-container"
+    }
+
+    stages {
+
+        stage('Clone Code') {
+            steps {
+                echo 'Cloning GitHub Repository...'
+                git 'https://github.com/abhisharma13019/Django-docker-swarm-deployment.git'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                echo 'Building Docker Image...'
+                sh 'docker build -t $IMAGE_NAME .'
+            }
+        }
+
+        stage('Stop Old Container') {
+            steps {
+                echo 'Stopping Old Container...'
+                sh 'docker stop $CONTAINER_NAME || true'
+                sh 'docker rm $CONTAINER_NAME || true'
+            }
+        }
+
+        stage('Deploy Container') {
+            steps {
+                echo 'Deploying Docker Container...'
+                sh 'docker run -d -p 8000:8000 --name $CONTAINER_NAME $IMAGE_NAME'
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                echo 'Checking Running Containers...'
+                sh 'docker ps'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'CI/CD Pipeline Executed Successfully!'
+        }
+
+        failure {
+            echo 'Pipeline Failed!'
+        }
+    }
+}
