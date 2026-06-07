@@ -1,57 +1,31 @@
 pipeline {
     agent any
 
-    environment {
-        IMAGE_NAME = "django-app"
-        CONTAINER_NAME = "django-container"
-    }
-
     stages {
-
-        stage('Clone Code') {
+        stage('code clone') {
             steps {
-                echo 'Cloning GitHub Repository...'
-                git 'https://github.com/abhisharma13019/Django-docker-swarm-deployment.git'
+                git url: 'https://github.com/abhisharma13019/Django-docker-swarm-deployment.git', branch: 'main'
             }
         }
 
-        stage('Build Docker Image') {
+        stage('build') {
             steps {
-                echo 'Building Docker Image...'
-                sh 'docker build -t $IMAGE_NAME .'
+                sh 'docker build . -t abhisharma13019/django-cicd-test:latest'
             }
         }
 
-        stage('Stop Old Container') {
+        stage('push') {
             steps {
-                echo 'Stopping Old Container...'
-                sh 'docker stop $CONTAINER_NAME || true'
-                sh 'docker rm $CONTAINER_NAME || true'
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-key', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin && docker push abhisharma13019/django-cicd-test:latest'
+                }
             }
         }
 
-        stage('Deploy Container') {
+        stage('deploy') {
             steps {
-                echo 'Deploying Docker Container...'
-                sh 'docker run -d -p 8000:8000 --name $CONTAINER_NAME $IMAGE_NAME'
+                sh 'docker compose down && docker compose pull && docker compose up -d'
             }
-        }
-
-        stage('Verify Deployment') {
-            steps {
-                echo 'Checking Running Containers...'
-                sh 'docker ps'
-            }
-        }
-    }
-
-    post {
-        success {
-            echo 'CI/CD Pipeline Executed Successfully!'
-        }
-
-        failure {
-            echo 'Pipeline Failed!'
         }
     }
 }
